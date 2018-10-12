@@ -11,6 +11,7 @@ import numpy as np
 from numpy import pi, cos
 import pymultinest as pys
 import corner
+import copy as COPY
 import numpy as np
 import pylab as plt
 from scipy.linalg import logm
@@ -147,7 +148,7 @@ def logLike(cube): #Likelihood function
     
     return LogL 
 
-def mypriors():
+def mypriors(): #Prior
     prior_source_list = []
     
     for i in range(num_of_model_sources):
@@ -187,7 +188,7 @@ logWT = []  #Store  weight =width*likelihood
 
 
 logZ = -np.exp(300)     # SUM(weights)= Z Evidence
-H = 0
+H = 0                  # H = Information
 
 
 ################################# MAIN NS LOOP ################################
@@ -195,7 +196,7 @@ H = 0
 #Outer interval 
 logw = np.log(1.0 - np.exp(-1.0 / num_live_points))
 
-sigma = mcmc_step_size*np.random.random((ndim))+1.0
+sigma = mcmc_step_size*np.random.random()+1.0
 
 ##### book keeper######
 F = open(options.output, 'a+')
@@ -207,6 +208,9 @@ print('live_points:'+str(num_live_points)+'\n'+'nest_runs:'+str(nest_runs)+'\n'+
 if F:
 	F.write(outtext)
 	F.write('live_points:'+str(num_live_points)+'\n'+'nest_runs:'+str(nest_runs)+'\n'+'probability_off:'+str(probability_off)+'\n \n')
+    
+
+#-----------------BEGIN NEST ------------------------
 for i in range(nest_runs):
     # Draw worst object with L* from n points
     worst = 	np.argmin(l_objects)
@@ -238,11 +242,12 @@ for i in range(nest_runs):
     logw -= 1.0/num_live_points
    
 
-    while True:#----copy a random point and do mcmc from there-----
+    while True:#----copy a random point and replace worst then do mcmc from there-----
         copy = np.random.randint(len(objects))
-        if (copy != worst):
-            theta = objects[copy,:]
-            break
+        if (copy != worst):break
+    
+    objects[worst,:] = COPY.deepcopy(objects[copy,:])   #
+    theta = objects[worst,:]                            #
     Likelihood_thresh = l_objects[copy]
     ####################################################################################################################
     increment = 0
@@ -274,20 +279,23 @@ for i in range(nest_runs):
             increment_mc = 0
             for mc_i in range(num_of_model_sources):
                 
+                
                 if theta[increment_mc:increment_mc+ndim][3] != 0:
                     
+                    #proposal step
+                    proposal = [np.random.normal(0,sigma),np.random.normal(0,sigma),0,np.random.normal(0,sigma)]                         
                     
-                    theta[increment_mc:increment_mc+4] += np.random.normal(0,sigma)
+                    theta[increment_mc:increment_mc+4] += proposal
                 
                 increment_mc += ndim
             
             new_point = theta
         
         
-            Likelihood_new = logLike(new_point)
-        
-        
-            alpha =  np.exp(-(np.exp(Likelihood_new)-np.exp(Likelihood_thresh))/2)            
+            Likelihood_new = logLike(new_point)    #Calculate Likelihood pf new point
+            
+            alpha =  np.exp(-(np.exp(Likelihood_new)-np.exp(Likelihood_thresh))/2)#Likelihood ratio of new and old point
+            
         
             if alpha >= 1:
                 objects[worst,:] = new_point  #Replace worst point with new point
@@ -311,6 +319,8 @@ for i in range(nest_runs):
 Z = logZ
 Z_err = np.sqrt((H)/num_live_points)
 H = H        #np.exp(H)/np.log(2.)
+
+
 
 outtext = "=====End Main Nest====== \n"
 print('Evidence Z = {0} +-{1} \n Information H = {2} \n '.format(Z,Z_err,H))
@@ -410,7 +420,7 @@ Y_sample_r = np.concatenate(Y_sample)
 A_sample_r = np.concatenate(A_sample)
 
 plt.figure(figsize=(15,10))
-plt.scatter(X_sample_r[np.where(A_sample_r>0)],Y_sample_r[np.where(A_sample_r>0)],alpha=0.059)
+plt.scatter(X_sample_r[np.where(A_sample_r>0)],Y_sample_r[np.where(A_sample_r>0)],alpha=0.5)
 plt.xlabel('X')
 plt.ylabel('Y')
 if config.getboolean('images','scatter_plot') == True:
