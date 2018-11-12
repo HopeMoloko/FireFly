@@ -1,0 +1,60 @@
+- Model is made up of the same number of real sources.
+- Model --> Circularly Gaussian Function
+
+- Do I add noise to the model or not? No.
+- Noise level (sigma,centered at 0)
+
+- Nested sampling , with mcmc for evolving a new point.
+- MCMC uses a while-loop and breaks when it gets a better point.
+
+- Do mcmc with a for-loop and check acceptance ratio.
+
+-My acceptance ratio is being going to one all this time, How??
+- rewrite the whole Algorithm one more time(Nope)
+
+
+- Acceptance ratio always going to one may be a very small stepsize
+
+--I have been using a One dimensional Gaussian function-Likelihood !!! It's Ok.
+- I changed that but I'm not getting good results at all --Wrong.
+
+- When i set prior to zero given that the sample is not within the interval, weird things happen.
+
+        Accpt = 0
+        for j in range(ndim):
+            
+            if (interval[0]<= new_point[j] <= interval[1]):
+                Accpt += 1
+        
+        if Accpt == 4:
+            prior = 1
+        else: 
+            prior = 0
+            
+    ---- This was because there was a bug!!
+     
+     Likelihood_new = loglike(new_point)*prior is WRONG!
+     Likelihood_new = loglike(new_point)+log(prior) is Right!
+     
+ -I have changed the acceptance Ratio:
+ 
+    > log_alpha = Likelihood_new-Likelihood_old
+    > alpha = np.exp(log_alpha)
+    
+  - Larger stepsize longer runtime  (around 3 sigma)
+  -Small stepsize needs more nest runs lower runtime ( around 0.5 sigma)
+  
+  - I haven't pushed up the number of sources because i need to make sure the simple case finds the sources.
+  
+  -Bugs Found:
+  --Acceptance ratio
+  --Likelihood_new = loglike(new_point)*prior (I forgot i was working in log-space)
+  -- Weighting the posterior results (Went back to skillings paper)
+  
+  -Current problem:
+  -I can only  find one a single source. Was I finding all sources by chance depending on stepsize,nest runs ?? Not sure.
+  --> 
+  - I only find atleast one so far, (maybe there's another bug but i double checked)
+  - I need to let it run for a very long time? correct stepsize? -- Uncertain
+  
+     
