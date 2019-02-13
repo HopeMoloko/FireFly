@@ -15,7 +15,7 @@ import copy as COPY
 import numpy as np
 import pylab as plt
 from scipy.linalg import logm
-
+#import corner
 import scipy.stats as stat
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
@@ -44,7 +44,7 @@ default='sos.log', help='File for output messages. [name.log]')
 config.read(options.config)   # Read from config file options
 
 
-## Makefile parameters
+##  parameters
 
 source_list_path = 	config.get('execute','source_list_name')
 npix = 			config.getint('execute','npix')                 #npix by npix image
@@ -56,6 +56,7 @@ R_constant_value = 	config.getint('execute','R_value')
 ####### New folder ##########
 wdir = config.get('output','workingdir')
 folder_name = config.get('output','output_folder_name')
+
 ##Nest parameters
 num_live_points = 	config.getint('nest','num_live_points')     #Main nest loop number of live points
 nest_runs = 		config.getint('nest','nest_runs')        #Number of Main nest runs
@@ -71,11 +72,13 @@ if os.path.exists(wdir+'/'+folder_name)==True: # If folder exists delete it and 
     
 os.system('mkdir '+ folder_name)    #Create new folder
 os.chdir(folder_name)               #Change new folder 
+
 #################### Circularly Gaussian shaped  function ##################
 def tau(x,y,X,Y,R,A):  #Circularly  Gaussian Shaped function
     term1 = ((x-X)**2 + (y-Y)**2)/(2*R**2)
     return A*np.exp(-term1)
-##########################################################################
+
+########################### Source Image ###############################################
 x = np.arange(0, npix, 1, float)
 y = x [:,np.newaxis]
 
@@ -106,7 +109,10 @@ plt.ylabel('Y Position')
 if config.getboolean('images','save_img') == True:
     plt.savefig(config.get('images','img_name'),bbox_inches='tight')
 plt.show()
+
+
 ####################### Model, Likelihood and prior Equations ##################################
+
 def Model(x,y,Xm,Ym,Rm,Am):  #Model that describes each source
     x = np.arange(0, npix, 1, float)
     y = x[:,np.newaxis]
@@ -148,7 +154,7 @@ def logLike(cube): #Likelihood function
     
     return LogL 
 
-def mypriors(): #Prior
+def mypriors():  # Prior
     prior_source_list = []
     
     for i in range(num_of_model_sources):
@@ -188,7 +194,7 @@ logWT = []  #Store  weight =width*likelihood
 
 
 logZ = -np.exp(300)     # SUM(weights)= Z Evidence
-H = 0                  # H = Information
+H = 0                  # Intitialize H(Information)
 
 
 ################################# MAIN NS LOOP ################################
@@ -196,9 +202,10 @@ H = 0                  # H = Information
 #Outer interval 
 logw = np.log(1.0 - np.exp(-1.0 / num_live_points))
 
-sigma = mcmc_step_size*np.random.random()+1.0
 
-##### book keeper######
+sigma = mcmc_step_size*np.random.random()+1.0  #proposal stepsize for mcmc
+
+##### Make a log file######
 F = open(options.output, 'a+')
 ###########################
 
@@ -209,8 +216,8 @@ if F:
 	F.write(outtext)
 	F.write('live_points:'+str(num_live_points)+'\n'+'nest_runs:'+str(nest_runs)+'\n'+'probability_off:'+str(probability_off)+'\n \n')
     
-
-#-----------------BEGIN NEST ------------------------
+    
+#-----------------------------Begin Nest ------------------
 for i in range(nest_runs):
     # Draw worst object with L* from n points
     worst = 	np.argmin(l_objects)
@@ -242,12 +249,12 @@ for i in range(nest_runs):
     logw -= 1.0/num_live_points
    
 
-    while True:#----copy a random point and replace worst then do mcmc from there-----
+    while True:#----copy a random point and replace worst, then do mcmc from there-----
         copy = np.random.randint(len(objects))
         if (copy != worst):break
-    
-    objects[worst,:] = COPY.deepcopy(objects[copy,:])   #
-    theta = objects[worst,:]                            #
+            
+    objects[worst,:] = COPY.deepcopy(objects[copy,:])
+    theta = objects[copy,:]
     Likelihood_thresh = l_objects[copy]
     ####################################################################################################################
     increment = 0
@@ -266,52 +273,37 @@ for i in range(nest_runs):
             A = 0                              #switch off the amplitude
             
             theta[increment:increment+ndim] = [new_x,new_y,new_r,A]
-            check_num += 1 
-        
-        increment += ndim
-    ################ !!! comments !!! #######################################
-    '''I decided to iterate over each source and conditionally switch it off or on and then after i went through
-    all the sources, i do an mcmc on the samples that are switched-on'''
-    #####################################################################################################################
-
-    if (check_num < num_of_model_sources ):  # If all samples are off , skip otherwise do an mcmc
-        while True:
-            increment_mc = 0
-            for mc_i in range(num_of_model_sources):
-                
-                
-                if theta[increment_mc:increment_mc+ndim][3] != 0:
-                    
-                    #proposal step
-                    proposal = [np.random.normal(0,sigma),np.random.normal(0,sigma),0,np.random.normal(0,sigma)]                         
-                    
-                    theta[increment_mc:increment_mc+4] += proposal
-                
-                increment_mc += ndim
+            check_num += 1
             
-            new_point = theta
-        
-        
-            Likelihood_new = logLike(new_point)    #Calculate Likelihood pf new point
+    
+        else:  #Do an mcmc
             
-            alpha =  np.exp(-(np.exp(Likelihood_new)-np.exp(Likelihood_thresh))/2)#Likelihood ratio of new and old point
+            while True:
+                proposal = [np.random.normal(0,sigma),np.random.normal(0,sigma),0,np.random.normal(0,sigma)]
+                theta[increment:increment+ndim] += proposal
+         
             
+                new_point = theta
         
-            if alpha >= 1:
-                objects[worst,:] = new_point  #Replace worst point with new point
-                l_objects[worst] = Likelihood_new   #Replace the worst likelihood with new one  
-                break
-            else:
-                u = np.random.uniform()
-                if u <= alpha :
-                    objects[worst,:] = new_point 
-                    l_objects[worst] = Likelihood_new
+        
+                Likelihood_new = logLike(new_point)
+        
+        
+                alpha =  np.exp(-(np.exp(Likelihood_new)-np.exp(Likelihood_thresh))/2)            
+        
+                if alpha >= 1:
+                    objects[worst,:] = new_point  #Replace worst point with new point
+                    l_objects[worst] = Likelihood_new   #Replace the worst likelihood with new one  
                     break
                 else:
-                    theta = theta
-        else:
-            objects[worst,:] = theta
-            l_objects[worst] = logLike(theta)
+                    u = np.random.uniform()
+                    if u <= alpha :
+                        objects[worst,:] = new_point 
+                        l_objects[worst] = Likelihood_new
+                        break
+                    else:
+                        theta[increment:increment+ndim] = theta[increment:increment+ndim]
+        increment += ndim
                 
     if i >nest_runs*np.exp(H)/np.log(2.):
         break       
@@ -319,8 +311,6 @@ for i in range(nest_runs):
 Z = logZ
 Z_err = np.sqrt((H)/num_live_points)
 H = H        #np.exp(H)/np.log(2.)
-
-
 
 outtext = "=====End Main Nest====== \n"
 print('Evidence Z = {0} +-{1} \n Information H = {2} \n '.format(Z,Z_err,H))
@@ -384,14 +374,14 @@ for i in range(num_of_model_sources*ndim):
         plt.axvline(107,c='r')
         #plt.axvline(81,c='g')
         #plt.axvline(140.2,c='c')
-        X_sample.append(sample[:,i])
+        X_sample.append(sample[:,i][sample[:,i]>0])
         
     elif i%4==1:
         plt.xlabel('Y')
         plt.axvline(90,c='r')
         #plt.axvline(111,c='g')
         #plt.axvline(137.2,c='c')
-        Y_sample.append(sample[:,i])
+        Y_sample.append(sample[:,i][sample[:,i]>0])
         
     elif i%4==2:
         plt.xlabel('R')
@@ -400,7 +390,7 @@ for i in range(num_of_model_sources*ndim):
         plt.axvline(8,c='r')
         #plt.axvline(13,c='g')
         #plt.axvline(10.3,c='c')
-        A_sample.append(sample[:,i])
+        A_sample.append(sample[:,i][sample[:,i]>0])
         
 
     #plt.legend(loc='best')
@@ -420,7 +410,7 @@ Y_sample_r = np.concatenate(Y_sample)
 A_sample_r = np.concatenate(A_sample)
 
 plt.figure(figsize=(15,10))
-plt.scatter(X_sample_r[np.where(A_sample_r>0)],Y_sample_r[np.where(A_sample_r>0)],alpha=0.5)
+plt.scatter(X_sample_r[np.where(A_sample_r>0)],Y_sample_r[np.where(A_sample_r>0)],alpha=0.059)
 plt.xlabel('X')
 plt.ylabel('Y')
 if config.getboolean('images','scatter_plot') == True:

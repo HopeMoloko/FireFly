@@ -57,4 +57,62 @@
   - I only find atleast one so far, (maybe there's another bug but i double checked)
   - I need to let it run for a very long time? correct stepsize? -- Uncertain
   
+  
+  
+  Code Review :
+  - Define all inputs in the arguments space.
+  - Instead of for-loops.
+  
+  
+  Do parameter Estimation with Nested sampling.
+  - Simple case where i had the example data problem. 
+  
+  -Meeting with Michelle:
+  -write the simple nested sampling for the example case(done with mcmc)
+  -check tests
+  
+  
+  
+  
+  - Change the initializing with accept and reject. 
+  - Is it correct to keep changing the scaling? Yes, or does it break the detailed balance.
+  - Initialize over the entire parameter space ( not in zero to 60%)
+  - Gaussian proposal not fucking uniform.
+  -Logspace HOPE!!!!!
+  
+  ---
+  
+  3 December 2018 (3 hours)
+  
+  -Increase number of live points to 1000 and increase Likelihood evalutions to over 50000
+  -check while-loop compared to for-loop for mcmc
+  -Try one-by-one source evalution
+  
+  -----If this work then package code-------> Make a module.
+  - Compare this with multinest
+  
+  
+  ----------------------------------
+  - So i reduced my image size and i was able to recover the sources effortlessly (50x50) it took 4min
+  Evidence Z = -88.05873662526183 +-0.36182187340401184 : Information H = 65.45753403679439 
+    time: 246.84045481681824s
+
+- (100x100) it took 9 min ...(1000 live points and 100 000 runs)
+-Evidence Z = -61.63845291798859 +-0.23001869171845502 : Information H = 52.908598539869644 
+time: 567.0578258037567s
+
+-(100X100) (2000 live points) - (100 000 nest runs) 
+Evidence Z = -63.629957199182044 +-0.15231371318172643 : Information H = 46.398934446410436 
+time: 375.01013684272766s
+
+---04 December 2018
+- (200pix) - 
+Evidence Z = -59.95074051576535 +-0.15426593507092085 : Information H = 47.59595744661112 
+time: 3636.0912935733795
+
      
+     
+-----For-loop
+(200x200) - 3 sources ( 2000 live points and 10000 nested runs)
+Evidence Z = -22244995.6923892 +-0.07937459432599636 : Information H = 12.600652448832989 
+time: 1518.2983689308167
