@@ -180,26 +180,25 @@ def MH_mcmc(loglikelihood_func,Prior_func,theta,args_loglike,args_prior,mcmc_ste
 
         New_theta = theta + np.random.normal(0,stepsize)
 
-        #Compute Likelihood and prior of New_thETA
+        #Compute Likelihood and prior of New_theta
 
         loglikelihood_new = loglikelihood_func(New_theta,args_loglike)
         Prior_new         = Prior_func(New_theta,args_prior)
 
         if Nested_Sampling == True:
+            #If running mcmc fro ns, then take the logLikelihood and prior thresholds from ns
             loglstar,logpstar = Nested_Sampling_args
             loglikelihood_old = loglstar
             Prior_old         = logpstar
-            #Take a decision to accept of reject ne wsample (1.0 for accept and 0.0 for reject)
-            Decision = MH_acceptance(loglikelihood_new,Prior_new,loglstar,logpstar)
+
         #Compute Likelihood and prior of old sample (theta)
         elif Nested_Sampling == False:
             loglikelihood_old = loglikelihood_func(theta,args_loglike)
             Prior_old         = Prior_func(theta,args_prior)
 
-            #Take a decision to accept of reject ne wsample (1.0 for accept and 0.0 for reject)
-            Decision = MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old)
 
-
+        #Take a decision to accept of reject ne wsample (1.0 for accept and 0.0 for reject)
+        Decision = MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old)
 
         if Decision == 1.0 :  #if it was accepted
             #move to new sample
