@@ -41,10 +41,17 @@ def MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old):
     Output :  0.0 or 1.0
             0.0 for rejected sample or 1.0 for accepted sample"""
 
+    try:
+        loglikelihood_new = float(loglikelihood_new)
+        Prior_new = float(Prior_new)
+        loglikelihood_old = float(loglikelihood_old)
+        Prior_old        = float(Prior_old)
+    except TypeError:
+        return 0.0
 
     #Acceptance ratio
 
-    logR_likelihood = (loglikelihood_new - loglikelihood_old )  
+    logR_likelihood = (loglikelihood_new - loglikelihood_old )
 
     R = np.exp(logR_likelihood)*(Prior_new/Prior_old)
 
@@ -129,6 +136,16 @@ def test_input_types_mh_acceptance():
     Prior_old         = 0.5
 
     #these values will yield R = 0.049 , so they are smaller than 1 and u, therefore the sample must be rejected
+
+    assert (MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old) == 0.0)
+
+def test_input_complex():
+
+    loglikelihood_new = 8j
+    Prior_new        = 2j
+
+    loglikelihood_old = 2j
+    Prior_old      = 0.5j
 
     assert (MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old) == 0.0)
 #########################################################################################################
