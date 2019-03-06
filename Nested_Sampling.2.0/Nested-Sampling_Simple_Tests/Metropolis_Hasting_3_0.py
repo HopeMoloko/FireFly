@@ -44,9 +44,9 @@ def MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old):
 
     #Acceptance ratio
 
-    logR = (loglikelihood_new - loglikelihood_old)
+    logR_likelihood = (loglikelihood_new - loglikelihood_old )  
 
-    R = np.exp(logR)*(Prior_new/Prior_old)
+    R = np.exp(logR_likelihood)*(Prior_new/Prior_old)
 
     #Generate a uniform random Number
     u = np.random.uniform()
@@ -119,13 +119,13 @@ def test_accept_worse_sample_mh_acceptance(): #sometimes
 
     assert (MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old) == 1.0)
 
-def test_literal_types_int_mh_acceptance():
+def test_input_types_mh_acceptance():
     #inputs (logLikelihood ints not floats)
     np.random.seed(1) #will yeild u = 0.41
     loglikelihood_new = -9
     Prior_new         = 0.5  #in the bounds but its the worst sample
 
-    loglikelihood_old = -6
+    loglikelihood_old = -6.5
     Prior_old         = 0.5
 
     #these values will yield R = 0.049 , so they are smaller than 1 and u, therefore the sample must be rejected
