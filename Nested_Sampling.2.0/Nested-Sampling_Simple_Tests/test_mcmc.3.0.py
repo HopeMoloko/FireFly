@@ -88,6 +88,8 @@ y_vals = (1/np.sqrt(2*np.pi))*np.exp(-(x_vals-5)**2)
 
 plt.plot(x_vals,y_vals)
 plt.xlabel('$\mu$')
+plt.savefig('True_Gaussian_distribution')
+plt.title('True simple Gausssian distribution')
 plt.show()
 
 
@@ -116,6 +118,8 @@ chain_particles , chain_loglikelihood_particles , chain_prior_particles, Accepta
 print(np.mean(chain_particles))
 plt.hist(chain_particles)
 plt.xlabel('$\mu$')
+plt.savefig('mcmc_Sampled_Gaussian_distribution')
+plt.title('MCMC sampled distribution')
 plt.show()
 
 pytest.approx(np.mean(chain_particles),mu_value,0.1)
