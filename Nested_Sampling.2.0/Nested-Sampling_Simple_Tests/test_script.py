@@ -1,6 +1,7 @@
 import Metropolis_Hasting_3_0T as MCMC
 import numpy as np
 import pytest
+import Functions as F
 
 # Unit tests for acceptance function
 #####################################################################################################
@@ -19,7 +20,7 @@ def test_accept_good_sample_mh_accetance():
 def test1_reject_worst_sample_mh_accetance():
     #inputs
     loglikelihood_new = -9.5
-    Prior_new         = 0  #out of the uniform bounds , the sample must be rejected
+    Prior_new         = -np.inf  #out of the uniform bounds , the sample must be rejected
 
     loglikelihood_old = -6.5
     Prior_old         = 0.5
@@ -40,6 +41,7 @@ def test2_reject_worst_sample_mh_accetance():
     #these values will yield R = 0.049 , so they are smaller than 1 and u, therefore the sample must be rejected
 
     assert (MCMC.MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old) == 0.0)
+
 
 def test_accept_worse_sample_mh_acceptance(): #sometimes
     #inputs
@@ -78,4 +80,60 @@ def test_input_complex():
 
     with pytest.raises(TypeError, match=r'Please check input values, either integers or floats'):
         MCMC.MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old)
+
+def test_zero_division_error():
+    # complex values
+    loglikelihood_new = 8
+    Prior_new        = 2
+
+    loglikelihood_old = 2
+    Prior_old      = 0.0
+
+    with pytest.raises(ZeroDivisionError, match=r'Please check division by zero'):
+        MCMC.MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old)
 #########################################################################################################
+
+
+def test_prior():
+    #theta within the bounds
+    limits = [[5,20],[0,20]]
+    theta  = [8,6]
+
+    assert (F.Prior(theta,limits) == 1.0)
+
+
+def test_prior_1():
+    #theta not in the bounds
+    limits = [[5,20],[0,20]]
+    theta  = [-8,-6]
+
+    assert (F.Prior(theta,limits) == -np.inf)
+
+def test_likelihood():
+    np.random.seed(12)
+
+    x    = np.linspace(-5,5)
+    sigma = 1
+    data = F.model_equation([3.,2.,1.],x)
+    args =  [data, sigma, x]
+
+    theta = [3.,2.,1.]
+
+    #should yeild logl = np.sum(-0.5*np.log(2*np.pi))
+
+    assert (F.logLikelihood(theta,args) == np.sum(-0.5*np.log(2*np.pi)))
+
+
+def test_likelihood_cubic():
+    np.random.seed(12)
+
+    x    = np.linspace(-5,5)
+    sigma = 2
+    data = F.model_equation_cubic([3.,2.,1.,.5],x)
+    args =  [data, sigma, x]
+
+    theta = [3.,2.,1.,.5]
+
+    #should yeild logl = np.sum(-0.5*np.log(2*np.pi*4))
+
+    assert (F.logLikelihood_cubic(theta,args) == np.sum(-0.5*np.log(2*np.pi*4)))
