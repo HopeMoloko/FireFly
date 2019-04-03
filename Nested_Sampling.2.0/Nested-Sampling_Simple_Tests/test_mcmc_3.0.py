@@ -17,7 +17,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.patches import Ellipse
 from matplotlib.collections import PatchCollection
 
-import Metropolis_Hasting_3_0 as MH
+import Metropolis_Hasting_3_0T as MH
 import pytest
 
 #####################################
@@ -28,7 +28,6 @@ def logLikelihood(mu,args2):
 
     """Simple gaussian Likelihood
 
-    Parameters
     --------------
     mu_true : scalar
             True mean value
@@ -41,8 +40,9 @@ def logLikelihood(mu,args2):
 
     mu_val = args2[0]
 
+    mu_l = mu[0]
 
-    L = (1/np.sqrt(2*np.pi)*np.exp(-(mu_val-mu)**2))
+    L = (1/np.sqrt(2*np.pi)*np.exp(-(mu_val-mu_l)**2))
 
     return np.log(L)
 
@@ -72,10 +72,12 @@ def Prior(mu,args1):
     """
 
     mulimits = args1[0]
+
+    mu_l = mu[0]
     #print(mulimits)
     #If position is out of limits discard
-    if (mu < mulimits[0]) | (mu > mulimits[1]):
-        mu_prior = np.nan
+    if (mu_l < mulimits[0]) | (mu_l > mulimits[1]):
+        mu_prior = 0
     else:
         mu_prior = 1.0/(mulimits[1] - mulimits[0])
 
@@ -102,7 +104,7 @@ mustep = 0.5
 stepsize = np.array([mustep])
 
 #Intial value
-theta = 3.2
+theta =  np.array([3.2]
 mu_value = 5.0
 mulimits = [0,10]
 

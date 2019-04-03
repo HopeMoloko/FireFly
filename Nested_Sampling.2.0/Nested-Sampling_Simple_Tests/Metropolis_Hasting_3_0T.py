@@ -1,27 +1,7 @@
 ########################Import Modules##########################################
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import scipy.stats as stats
-import corner
-import copy as duplicate
-import time
-from matplotlib import colors
-import scipy as sp
-
-
+from numba import jit , prange
 import copy
-import sys
-import unittest
-
-from ipywidgets import IntProgress
-from IPython.display import display
-
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-from matplotlib.patches import Ellipse
-from matplotlib.collections import PatchCollection
-
 #####################################
 def MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old):
 
@@ -52,14 +32,19 @@ def MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old):
         loglikelihood_old = float(loglikelihood_old)
         Prior_old        = float(Prior_old)
     except TypeError:
-
         raise TypeError('Please check input values, either integers or floats')
+
 
     #Acceptance ratio
 
     logR_likelihood = (loglikelihood_new - loglikelihood_old )
 
-    R = np.exp(logR_likelihood)*(Prior_new/Prior_old)
+    try:
+        np.seterr(all='ignore')
+        R = np.exp(logR_likelihood)*(Prior_new/Prior_old)
+
+    except ZeroDivisionError:
+        raise ZeroDivisionError('Please check division by zero')
 
     #Generate a uniform random Number
     u = np.random.uniform()
@@ -70,13 +55,14 @@ def MH_acceptance(loglikelihood_new,Prior_new,loglikelihood_old,Prior_old):
         #Accept new sample
         return 1.0
 
-    else: return 0.0
+    else: return 0.0 #reject sample
 
 
 
 
 #####################          Main mcmc     ##########################################################
 
+#@jit(nonpython=True, parallel=True)
 def MH_mcmc(loglikelihood_func,Prior_func,theta,args_loglike,args_prior,mcmc_steps,stepsize):
     """ Metropolis Hasting MCMC Algorithm
 
@@ -107,9 +93,22 @@ def MH_mcmc(loglikelihood_func,Prior_func,theta,args_loglike,args_prior,mcmc_ste
 
     -------------------
 
-    Output :  Array, Array , Array , scalar
-            chain_sample , chain_loglikelihood ,chain_prior and the Acceptance_ratio
+    Return
+    ------------------
+
+    chain_sample        : array
+                         Samples from the mcmc chain
+
+    chain_loglikelihood : array
+                         Loglikelihood values of each sample
+
+    chain_prior         : array
+                        prior values of each sample
+
+    Acceptance_ratio    : scalar
+                        Acceptance ratio of the mcmc chain
     """
+
     naccept = 0      #count number of accepted samples
     nreject = 0     #count number of rejected samples
 
@@ -120,14 +119,8 @@ def MH_mcmc(loglikelihood_func,Prior_func,theta,args_loglike,args_prior,mcmc_ste
 
 
     # Do mcmc on the random survivor
-    for mcmci in range(mcmc_steps):
-
-        #Pick a random index , change one param at a time
-
-        #j = np.random.randint(0,len(theta))
-
+    for mcmci in prange(mcmc_steps):
         #Generate new sample by adding a random stepsize from a normal distribution centred at 0
-        #New_theta = copy.deepcopy(theta)
 
         New_theta = theta + np.random.normal(0,stepsize)
 
