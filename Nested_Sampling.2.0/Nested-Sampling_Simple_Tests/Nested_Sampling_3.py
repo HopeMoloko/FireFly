@@ -5,6 +5,8 @@ import corner
 import time
 import copy as duplicate
 
+import progressbar
+
 #test numba
 from numba import jit , prange
 
@@ -24,7 +26,7 @@ def logsumexp(values):
 
     ----------------
     values  : array
-            log values
+            large values
     ---------------
     return  : array
             logsum"""
@@ -42,15 +44,12 @@ class Nested_Sampling:
     Parameters
 
     ------------------
-    particles :  array
-                N drawn samples from the prior(live samples)
+    logLikelihood : function
+                    The loglikelihoodfunction
 
-    loglikelihood_particles : array
-                            loglikelihood values of each particle (sample in particles)
-
-    Prior     : array
-              Prior values of each particle (sample in particles)
-    num_params: integer
+    Prior        : function
+                   The Prior function
+    ndim       : integer
                 Number of Parameters
 
     nest_steps: integer
@@ -60,36 +59,64 @@ class Nested_Sampling:
                             returns: new particle , new loglikelihood value , new prior value
     """
 
-    def __init__(self, particles, loglikelihood_particles,num_params, Prior, nest_steps, Exploration_technique):
+    def __init__(self,loglikelihood,Prior, ndim, prior_transform, nest_steps,nlive_points, Exploration_technique):
 
-        self.particles               = particles
-        self.loglikelihood_particles = loglikelihood_particles
-        self.num_params              = num_params
+        self.loglikelihood           = loglikelihood
         self.Prior                   = Prior
+        self.ndim                    = ndim
         self.nest_steps              = nest_steps
         self.Exploration_technique   = Exploration_technique
+        self.nlive_points            = nlive_points
 
-        self.logX                    = None
-        self.logZ                    = None
         self.posterior_samples       = None
-        self.wt                      = None
         self.nsize                   = None
 
         #Storage of results
-        self.keep                    = np.empty((self.nest_steps, self.num_params+1))
+        self.keep                    = np.empty((nest_steps, ndim+1))
 
         #Acceptance ratios
         self.nacceptance             = np.array([])
 
+        if ndim != None:
 
-    def NestedSampler(self):
+            self.draw_uniform = lambda: np.random.uniform(0, 1, size=ndim)  #function
+
+        else:
+            pass
+
+        loglikelihood_particles = np.zeros((nlive_points))
+        Prior_particles = np.zeros((nlive_points))
+
+        #particles
+        particles = np.zeros((nlive_points,ndim))
+
+
+        #Draw N samples
+        print('Begin Drawing Live points from prior...')
+        print('No. live points : ',nlive_points)
+        for i in prange(nlive_points):
+            u                          = self.draw_uniform()
+            sample                     = prior_transform(u)
+            particles[i]               = sample
+            loglikelihood_particles[i] = loglikelihood(sample)
+            Prior_particles[i]         = Prior(sample)
+
+        self.particles               = particles
+        self.loglikelihood_particles = loglikelihood_particles
+        self.Prior                   = Prior_particles
+
+        print('End Draw!')
+
+    def nestedsampler(self):
 
         """ The main nested sampling algorithm"""
 
         print('Begin nested sampling...')
         print('No. of runs : ',self.nest_steps)
-        print('No. of parameters : ',self.num_params)
+        print('No. of parameters : ',self.ndim)
 
+
+        bar = progressbar.ProgressBar(max_value=self.nest_steps)
         for i in prange(self.nest_steps):
 
             # Index of particle with worst likelihood values
@@ -101,9 +128,8 @@ class Nested_Sampling:
 
 
             #Copy random survivor
-            while True:
-                copy = np.random.randint(len(self.particles))
-                if (copy != worst): break
+            copy = np.random.choice(np.concatenate(\
+               (np.arange(1,worst),np.arange(worst+1,len(self.particles)))))
 
             #Discard the worst particle and replace with random survivor
             #and do exploration from the copied particles
@@ -127,58 +153,63 @@ class Nested_Sampling:
                 #Save acceptance ratio for each mcmc
                 self.nacceptance  = np.append(self.nacceptance, Acceptance_ratio)
 
+            bar.update(i)
+
         #Evaluate the Prior Mass
 
-        self.logX    = -(np.arange(0, (self.nest_steps))+1.)/len(self.loglikelihood_particles)
+        logX       = -(np.arange(0, (self.nest_steps))+1.)/len(self.loglikelihood_particles)
 
-        # Evaluate Posterior Weights
-        logwt  = self.logX.copy() + self.keep[0:(self.nest_steps), -1]
-        self.wt = np.exp(logwt - logwt.max())
+        # Prior width  wi = 0.5*(Xi-1 Xi+1)
+        logPrior_width = np.array([0.5*(logX[i]-logX[i+1]) for i in range(len(logX)-1)])
 
-        #Normalised posterior weights
-        normalised_wt = self.wt/self.wt.sum()
+        logPrior_width = np.append(logPrior_width,0.5*logX[-1])
 
-        #Prior Weights
-        logw  = self.logX.copy()
-        #Normalised Prior Weights
-        logw -= logsumexp(logw)
+        # Calculate the Evidence ( marginal likelihood equaion 8) Z = SUM(Li*wi)
 
-        # Effective Sample stepsize
-        effective_sample_size = int(np.exp(-np.sum(normalised_wt*np.log(normalised_wt + 1E-300))))
+        logZ = logsumexp(logPrior_width + self.keep[:,-1])
 
-        #Evaluate marginal Likelihood
-        self.logZ = logsumexp(logw + self.keep[:,-1])
+        # Importance weights (equation 10)
+
+        logImportance_weights = np.array([ (li+wi)-logZ for li,wi in zip(self.keep[:,-1],logPrior_width)])
+
+        Importance_weights = np.exp(logImportance_weights)
+
+
         #Evaluate the information
-        H   = np.sum(normalised_wt*(self.keep[:,-1] - self.logZ))
+        H = int(np.exp(-np.sum(Importance_weights*np.log(Importance_weights + 1E-300))))
 
+        self.logX  = logX
+        self.logZ = logZ
+        self.Importance_weights = Importance_weights
 
         print('\n'+'logZ = {logZ} '.format(logZ=self.logZ))
-        print('Information = {H}'.format(H=H))
-        print('Effective Sample Size = {ess}'.format(ess=effective_sample_size))
+        print('Information = {H} nats'.format(H=H))
 
 
         ####################### Posterior Samples ##################################
-        self.posterior_samples = np.empty((effective_sample_size, self.keep.shape[1]))
+        posterior_samples = np.empty((H, self.keep.shape[1]))
         k = 0
         while True:
           # Choose one of the samples
             which = np.random.randint(self.keep.shape[0])
 
           # Acceptance probability
-            prob = normalised_wt[which]/normalised_wt.max()
+            prob = self.Importance_weights[which]/self.Importance_weights.max()
 
             if np.random.rand() <= prob:
-                self.posterior_samples[k, :] = self.keep[which, :]
+                posterior_samples[k, :] = self.keep[which, :]
 
                 k += 1
 
-            if k >= effective_sample_size:
+            if k >= H:
                 break
 
-        np.savetxt('keep_Many.txt', self.posterior_samples)
+        np.savetxt('keep_Many.txt', posterior_samples)
+
+        self.posterior_samples = posterior_samples
 
         print('\n'+'End nested sampling.')
-        
+
     def analyze(self,labels,truths=None):
         """ Visualize the results from nested sampling
 
@@ -204,8 +235,8 @@ class Nested_Sampling:
         ax1.plot(self.logX, self.keep[0:(self.nest_steps), -1], 'bo')
         ax1.set_ylabel('$\\loglikelihood$')
 
-        ax2.plot(self.logX, self.wt, 'bo-')
-        ax2.set_ylabel('Posterior weights (relative)')
+        ax2.plot(self.logX, self.Importance_weights/self.Importance_weights.max(), 'bo-')
+        ax2.set_ylabel('Importance weights (relative)')
         ax2.set_xlabel('$log(X)$')
 
         plt.show()
@@ -226,7 +257,7 @@ class Nested_Sampling:
         ------------
         returns: logZ distribution histogram"""
 
-        logZ_dist  = np.array([])
+        logZ_distribution  = np.array([])
 
         for i in prange(nsize):
             uniform_numbers  = np.log(np.random.uniform(0,1,len(self.keep[:,-1])))
@@ -237,15 +268,19 @@ class Nested_Sampling:
                 number += num
                 logX_mass = np.append(logX_mass,number/len(self.particles))
 
-            logw_dist       = logX_mass
-            logw_dist      -= logsumexp(logw_dist)
+            # Prior width
+            logPrior_width_un = np.array([0.5*(logX_mass[i]-logX_mass[i+1])\
+                                          for i in range(len(logX_mass)-1)])
 
-            logZ_d         = logsumexp(logw_dist + self.keep[:,-1])
+            logPrior_width_un = np.append(logPrior_width_un,0.5*logX_mass[-1])
 
-            logZ_dist     = np.append(logZ_dist,logZ_d)
+
+            logZ_un = logsumexp(logPrior_width_un + self.keep[:,-1])                        #Evaluate logZ
+
+            logZ_distribution.append(logZ_un)
 
         fig, ax = plt.subplots(figsize=(10,8), nrows = 1)
-        ax.hist(logZ_dist);
+        ax.hist(logZ_distribution);
         ax.set_xlabel('logZ')
         plt.show()
         plt.savefig('logZ_distribution.png')
