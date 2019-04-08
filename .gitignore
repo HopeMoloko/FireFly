@@ -1,5 +1,5 @@
  #files_to_ignore
-
+.swp*
 .F*
 Object_detection_Using MCMC.ipynb
 SOSfinder.py
@@ -8,3 +8,6 @@ intervals.ipynb
 make_data*
 My_Notes.log
 Exercise1.ipynb
+Configuration_File.txt
+example*
+.ipynb*
