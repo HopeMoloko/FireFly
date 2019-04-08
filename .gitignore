@@ -1,4 +1,4 @@
- file_to_ignore
+ #files_to_ignore
 
 .F*
 Object_detection_Using MCMC.ipynb
