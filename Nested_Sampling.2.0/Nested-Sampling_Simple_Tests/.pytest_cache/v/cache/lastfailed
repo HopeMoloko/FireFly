@@ -1,0 +1,5 @@
+{
+  "Metropolis_Hasting_3_0.py::test_input_complex": true,
+  "test_fake_cubic.py::test_mcmc": true,
+  "test_fake_data.py": true
+}
