@@ -1,7 +1,5 @@
-# MCMC.py : 
-script containing Metropolis-Hasting algorithm
+# Nested Sampling Algorithm develpment and testsing
 
-# Metropolis-hasting(Parameter_estimation).ipynb :
-Excercise for sampling using mcmc Metroplis hasting algorithm and estimating model parameters to fit on example_data.txt and example_cubic_data.txt
+# Latest code: Nested Sampling Simple Tests
 
-In the exerisice i only use a flat prior and i will update the algorithm for different types of prior.
+This folder contains the latest NS code and tests.
