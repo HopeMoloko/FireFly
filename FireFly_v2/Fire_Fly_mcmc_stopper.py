@@ -140,7 +140,7 @@ def MH_mcmc(
         loglikelihood_old = loglikelihood_func(theta)
         Prior_old = Prior_func(theta)
 
-        Update = switch(theta,loglikelihood_old,Prior_old,thresh)  # added u
+        Update = switch(theta,loglikelihood_old,Prior_old,thresh)  #FireFly (switcher sampler)
         
         New_theta = Update['sample_new']
         # Compute Likelihood and prior of New_theta
@@ -180,7 +180,7 @@ def MH_mcmc(
             nreject += 1
         bar.update(i)
 
-        if (i+1) %10000 == 0:   # FOR EVERY 10000 ITERATIONS test for convergence (exclude iteration 1)
+        if (i+1) %10000 == 0:   # FOR EVERY 10000 ITERATIONS test for convergence (exclude iteration 0)
             burn = 500
 
             chain0= np.array(chain_sample)[burn::2,1:]
