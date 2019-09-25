@@ -99,6 +99,11 @@ def MH_mcmc(
     stepsize           : scalar
                         The jump length of a new sample
 
+    thresh             :scalar 
+                        threshold for switching on-off for FireFly
+    
+    switch             : Sampler 
+                        FireFly sampler for generating trail sample
     -------------------
 
     Return
@@ -113,8 +118,8 @@ def MH_mcmc(
     chain_prior         : array
                         prior values of each sample
 
-    Acceptance_ratio    : scalar
-                        Acceptance ratio of the mcmc chain
+    MCMC final steps    : scalar
+                        Final mcmc steps taken to reach convergence (if reached)
     """
 
     naccept = 0  # count number of accepted samples
@@ -133,8 +138,6 @@ def MH_mcmc(
 
     while i< mcmc_steps:
 
-        # Generate new sample by adding a random stepsize from a normal distribution centred 0
-
         # Compute Likelihood and prior of old sample (theta)
 
         loglikelihood_old = loglikelihood_func(theta)
@@ -142,8 +145,9 @@ def MH_mcmc(
 
         Update = switch(theta,loglikelihood_old,Prior_old,thresh)  #FireFly (switcher sampler)
         
+        # Trail sample from FireFly
         New_theta = Update['sample_new']
-        # Compute Likelihood and prior of New_theta
+        
 
         loglikelihood_new = Update['loglikelihood_new'] #loglikelihood_func(New_theta)
         Prior_new =  Update['logp_new']          #Prior_func(New_theta)
@@ -203,15 +207,14 @@ def MH_mcmc(
 
         
     mcmc_steps = i
-    # Calculate the Acceptance ratio
+    
 
-    MCMC_final_steps = mcmc_steps    #naccept / mcmc_steps
+    MCMC_final_steps = mcmc_steps    #Final mcmc steps
 
     return (
         np.array(chain_sample),
         chain_loglikelihood,
         chain_prior,
         MCMC_final_steps
-        #naccept,
-        #nreject
+    
     ) 
