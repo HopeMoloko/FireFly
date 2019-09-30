@@ -99,11 +99,6 @@ def MH_mcmc(
     stepsize           : scalar
                         The jump length of a new sample
 
-    thresh             :scalar 
-                        threshold for switching on-off for FireFly
-    
-    switch             : Sampler 
-                        FireFly sampler for generating trail sample
     -------------------
 
     Return
@@ -118,8 +113,8 @@ def MH_mcmc(
     chain_prior         : array
                         prior values of each sample
 
-    MCMC final steps    : scalar
-                        Final mcmc steps taken to reach convergence (if reached)
+    Acceptance_ratio    : scalar
+                        Acceptance ratio of the mcmc chain
     """
 
     naccept = 0  # count number of accepted samples
@@ -138,16 +133,18 @@ def MH_mcmc(
 
     while i< mcmc_steps:
 
+        # Generate new sample by adding a random stepsize from a normal distribution centred 0
+
         # Compute Likelihood and prior of old sample (theta)
 
         loglikelihood_old = loglikelihood_func(theta)
         Prior_old = Prior_func(theta)
 
-        Update = switch(theta,loglikelihood_old,Prior_old,thresh)  #FireFly (switcher sampler)
+        Update = switch(theta,loglikelihood_old,Prior_old,thresh)  # added u
+
         
-        # Trail sample from FireFly
         New_theta = Update['sample_new']
-        
+        # Compute Likelihood and prior of New_theta
 
         loglikelihood_new = Update['loglikelihood_new'] #loglikelihood_func(New_theta)
         Prior_new =  Update['logp_new']          #Prior_func(New_theta)
@@ -165,7 +162,7 @@ def MH_mcmc(
            
 
             # Record new sample details
-            chain_sample.append(New_theta)  # edited
+            chain_sample.append(New_theta)  
             chain_loglikelihood = np.append(chain_loglikelihood, loglikelihood_new)
             chain_prior = np.append(chain_prior, Prior_new)
             
@@ -184,37 +181,52 @@ def MH_mcmc(
             nreject += 1
         bar.update(i)
 
-        if (i+1) %10000 == 0:   # FOR EVERY 10000 ITERATIONS test for convergence (exclude iteration 0)
-            burn = 500
 
-            chain0= np.array(chain_sample)[burn::2,1:]
 
-            splits = np.array_split(chain0,3)  #split the whole chain into 3
+        if (i+1) %30000 == 0:   # FOR EVERY 30000 ITERATIONS test for convergence (exclude iteration 1)
+           # burn = 500
+            
+            burn= np.where(chain_loglikelihood>=np.max(chain_loglikelihood)/2)[0]
+            #print(burn)
+
+            if burn.size == 0:
+                burn = np.array([0])
+            
+            chain_samples = np.array(chain_sample)
+            
+            #chain0 = np.array(chain_sample)[burn[0]:]
+            chain0 = chain_samples.reshape(len(chain_samples),chain_samples.shape[1]*chain_samples.shape[2])[burn[0]:]
+
+            splits = np.array_split(chain0,3,axis=1)  #split the whole chain into 3
             chain1= splits[0]                            
             chain2= splits[1]                                      
             chain3 = splits[2]
             ### Test convergence with gelman rubin ###
-            step= gelman_rubin.converge_from_list([chain1,chain2,chain3],jump=100)
+            
+            step= gelman_rubin.converge_from_list([chain1,chain2,chain3],jump=500)
             
             if step!=1 and step!=-1:
                 break                 #chain Converged
                 
             else:
-                mcmc_steps += 30000    #Chain did not converge
+                mcmc_steps += 20000    #Chain did not converge
+        
+            
 
         i += 1
     bar.finish()
 
         
     mcmc_steps = i
-    
+    # Calculate the Acceptance ratio
 
-    MCMC_final_steps = mcmc_steps    #Final mcmc steps
+    MCMC_final_steps = mcmc_steps    #naccept / mcmc_steps
 
     return (
         np.array(chain_sample),
         chain_loglikelihood,
         chain_prior,
         MCMC_final_steps
-    
+        #naccept,
+        #nreject
     ) 
