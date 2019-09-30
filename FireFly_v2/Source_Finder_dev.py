@@ -7,7 +7,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import Nested_sampling_dev as NS3
 import Metropolis_Hasting_dev as MH3
 
-import Fire_fly_mcmc_stopper as FireFly
+import Fire_Fly_mcmc_stopper as FireFly
 #import FireFly_mcmc as FireFly
 import corner
 from numba import jit
@@ -178,32 +178,23 @@ def Prior(thetas):
 
 #############################################################################
 
-def save_results(label,n_walkers, ndim, keeps):
-    """
-    reshape file and 
-    Save results to a csv dataframe using pandas
-    """
-    New_keep = np.array(keeps)
-    df = pd.DataFrame()
-    labels = label
-    
+def column_labels(label,n_walkers, ndim):
 
+    labels = label
     m = 0
     num_label = 0
-    #print(New_keep[0:])
+    columns = []
+    
     for s in range(n_walkers):
         for i in range(ndim):
-
-            df[labels[m] + '_' + str(num_label)] = pd.Series(New_keep[:,i])
-            #print(New_keep[:,i])
+            lab = labels[m] + '_' + str(num_label)
+            columns.append(lab)
 
             m += 1
             if m > (ndim-1):
                 m = 0
                 num_label += 1
-    
-
-    return df
+    return columns
 
 def live_point_switcher(sample,thresh):
     """
@@ -277,7 +268,7 @@ if __name__ == "__main__":
     args2 = Model, noise_level
 
 
-    print('number:',np.random.random_sample(5))
+
 
     label = ['A','X','Y']
     # Instiantiate the Explorer
@@ -316,12 +307,12 @@ if __name__ == "__main__":
 
     Samples_fixed = samples.reshape(len(samples),ndim*n_walkers)
 
-    df = save_results(label,n_walkers,ndim,Samples_fixed)
-    
-    
+    COLUMNS = column_labels(label,n_walkers, ndim)
+    df = pd.DataFrame(Samples_fixed,columns=COLUMNS)
+ 
     df.to_csv(samples_name+'.csv',index=False)
     
-    np.savetxt(samples_name+'loglike.csv',Loglike,delimiter=",")
+    #np.savetxt(samples_name+'loglike.csv',Loglike,delimiter=",")
     #Posterior results
     
 
