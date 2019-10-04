@@ -66,7 +66,6 @@ class EXPLORER:
         self,
         logLikelihood,
         Prior,
-        stepsize,
         mcmc_steps,
         stepper,
         ndim,
@@ -74,7 +73,7 @@ class EXPLORER:
         thresh,
     ):
 
-        self.stepsize = stepsize
+        #self.stepsize = stepsize
         self.mcmc_steps = mcmc_steps
         self.logLikelihood = logLikelihood
         self.Prior = Prior
@@ -86,7 +85,7 @@ class EXPLORER:
     # -------------------------------------------------------------------------------------------
 
     def switch_explorer(
-        self, theta_out, logl_theta, prior, thresh
+        self, theta_out, logl_theta, prior, thresh,stepsize
     ):
         """ Exploration technique used for generating a new sample in nested sampling
         the stepsize is only changed after a full mcmc run and not during the mcmc.
@@ -122,6 +121,7 @@ class EXPLORER:
         kwargs = {"ndim": self.ndim, "n_walkers": self.n_walkers}
 
         loglikelihood_new = logl_theta
+        loglikelihood_constraint = logl_theta
         theta_new = copy.deepcopy(theta_out)
         logp_new = prior
         Acceptance_Ratio = 0.0
@@ -169,7 +169,7 @@ class EXPLORER:
                 loglikelihood_trail = self.logLikelihood(theta_trail)
                 logp_trail = self.Prior(theta_trail)
 
-                if True:   #loglikelihood_trail > loglikelihood_constraint and logp_trail == 1.0:
+                if loglikelihood_trail > loglikelihood_constraint : #and logp_trail == 1.0:
                     theta_new = copy.deepcopy(theta_trail)  # deepcopy
                     loglikelihood_new = loglikelihood_trail
                     logp_new = logp_trail
@@ -177,7 +177,7 @@ class EXPLORER:
                     #loglikelihood_constraint = loglikelihood_new
                     Acceptance_Ratio = 1.0
                     count += 1
-                    assert logp_new == 1.0
+                    #assert logp_new == 1.0
 
             # ------------------------2-------------------------
             if flux_old != 0.0 and state_new == 0.0:  # on to off
@@ -198,7 +198,7 @@ class EXPLORER:
                 loglikelihood_trail = self.logLikelihood(theta_trail)
                 logp_trail = self.Prior(theta_trail)
 
-                if True: #loglikelihood_trail > loglikelihood_constraint and logp_trail == 1.0:
+                if loglikelihood_trail > loglikelihood_constraint :#and logp_trail == 1.0:
                     theta_new = copy.deepcopy(theta_trail)
                     theta_out = theta_new
                     loglikelihood_new = loglikelihood_trail
@@ -206,7 +206,7 @@ class EXPLORER:
                     logp_new = logp_trail
                     Acceptance_Ratio = 1.0
                     count += 1
-                    assert logp_new == 1.0
+                    #assert logp_new == 1.0
 
             # -----------------------3-----------------------
             if flux_old == 0.0 and state_new == 1.0:  # off to on
@@ -225,27 +225,27 @@ class EXPLORER:
                 loglikelihood_trail = self.logLikelihood(theta_trail)
                 logp_trail = self.Prior(theta_trail)
 
-                if True: #loglikelihood_trail > loglikelihood_constraint and logp_trail == 1.0:
+                if loglikelihood_trail > loglikelihood_constraint :##and logp_trail == 1.0:
                     theta_new = copy.deepcopy(theta_trail)
                     loglikelihood_new = loglikelihood_trail
                     logp_new = logp_trail
                     theta_out = theta_new
                     #loglikelihood_constraint = loglikelihood_new
                     Acceptance_Ratio = 1.0
-                    assert logp_new == 1.0
+                   # assert logp_new == 1.0
 
             # -----------------------------4---------------------------------
             if flux_old != 0.0 and state_new == 1.0:  # on to on
                 # Continue with random walk in position and flux.
                 # Continue with Random walk
 
-                chain_particle, chain_loglike, chain_prior, Acceptance_R, accept, reject = MH3.MH_mcmc(
+                chain_particle, chain_loglike, chain_prior, Acceptance_R = MH3.MH_mcmc(
                     self.logLikelihood,
                     self.Prior,
                     theta_out,
                     self.mcmc_steps,
                     source_num,
-                    self.stepsize,
+                    stepsize,
                 )
 
                 # trail theta from mcmc
@@ -257,13 +257,13 @@ class EXPLORER:
 
                 ###########Stepsize changer#############
                 # Refine step-size to let acceptance ratio converge around 50%
-                if accept > reject:
-                    self.stepsize *= np.exp(1.0 / accept)
-                if accept < reject:
-                    self.stepsize /= np.exp(1.0 / reject)
+                #if accept > reject:
+                 #   self.stepsize *= np.exp(1.0 / accept)
+                #if accept < reject:
+                 #   self.stepsize /= np.exp(1.0 / reject)
                 ###########
 
-                if True: #loglikelihood_trail > loglikelihood_constraint and logp_trail == 1.0:
+                if True: #loglikelihood_trail > loglikelihood_constraint : #and logp_trail == 1.0:
                     theta_new = copy.deepcopy(theta_trail)  # update new theta
                     logp_new = logp_trail  # update new logp
                     theta_out = (
@@ -276,9 +276,9 @@ class EXPLORER:
                         #loglikelihood_new
                     #)  # update likelihood constraint to get the best sample
                     Acceptance_Ratio = Acceptance_R  # update acceptance ratio
-                    assert logp_new == 1.0  # Check if logp new is what i expect
+                    #assert logp_new == 1.0  # Check if logp new is what i expect
 
-        assert logp_new == 1.0
+        #assert logp_new == 1.0
         return {
             "sample_new": theta_new,
             "loglikelihood_new": loglikelihood_new,
