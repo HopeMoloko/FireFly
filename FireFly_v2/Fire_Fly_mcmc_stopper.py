@@ -39,9 +39,9 @@ def MH_acceptance(loglikelihood_new, Prior_new, loglikelihood_old, Prior_old):
 
     try:
         loglikelihood_new = float(loglikelihood_new)
-        Prior_new = float(Prior_new)
+ #       Prior_new = float(Prior_new)
         loglikelihood_old = float(loglikelihood_old)
-        Prior_old = float(Prior_old)
+#        Prior_old = float(Prior_old)
     except TypeError:
         raise TypeError("Please check input values, either integers or floats")
 
@@ -49,10 +49,20 @@ def MH_acceptance(loglikelihood_new, Prior_new, loglikelihood_old, Prior_old):
 
     logR_likelihood = loglikelihood_new - loglikelihood_old
 
+    if Prior_new == -np.inf :
+        return 0.0
+
+    if Prior_new == 1.0 and Prior_old == -np.inf:
+        Prior_old = 1.0
+       # pass
+
+    if Prior_new == 1.0 and Prior_old == 1.0:
+        pass
+
     try:
 
         np.seterr(all="ignore")
-        R = np.exp(logR_likelihood) * (Prior_new / Prior_old)
+        R = np.exp(logR_likelihood) #* (Prior_new / Prior_old)
 
     except ZeroDivisionError:
         raise ZeroDivisionError("Please check division by zero")
@@ -75,7 +85,7 @@ def MH_acceptance(loglikelihood_new, Prior_new, loglikelihood_old, Prior_old):
 
 #@jit
 def MH_mcmc(
-    loglikelihood_func, Prior_func, theta, mcmc_steps,thresh,switch
+    loglikelihood_func, Prior_func, theta, mcmc_steps,thresh,stepsize,switch
 ): 
     """ Metropolis Hasting MCMC Algorithm
 
@@ -140,7 +150,7 @@ def MH_mcmc(
         loglikelihood_old = loglikelihood_func(theta)
         Prior_old = Prior_func(theta)
 
-        Update = switch(theta,loglikelihood_old,Prior_old,thresh)  # added u
+        Update = switch(theta,loglikelihood_old,Prior_old,thresh,stepsize)  # added u
 
         
         New_theta = Update['sample_new']
@@ -149,7 +159,7 @@ def MH_mcmc(
         loglikelihood_new = Update['loglikelihood_new'] #loglikelihood_func(New_theta)
         Prior_new =  Update['logp_new']          #Prior_func(New_theta)
 
-        
+        #print(New_theta)
 
         # Take a decision to accept of reject ne wsample (1.0 for accept and 0.0 for reject)
         Decision = MH_acceptance(
@@ -168,6 +178,7 @@ def MH_mcmc(
             
 
             naccept += 1
+            
 
         else:
             # Reject the new sample and stay at the old sample (theta)
@@ -179,23 +190,33 @@ def MH_mcmc(
             chain_loglikelihood = np.append(chain_loglikelihood, loglikelihood_old)
             chain_prior = np.append(chain_prior, Prior_old)
             nreject += 1
+            
+
         bar.update(i)
+
+        # if naccept > nreject:
+        #     stepsize *= np.exp(1.0 / naccept)
+        # if naccept < nreject:
+        #     stepsize /= np.exp(1.0 / nreject)
 
 
 
         if (i+1) %30000 == 0:   # FOR EVERY 30000 ITERATIONS test for convergence (exclude iteration 1)
-           # burn = 500
+           # burn (where o cut burn-in)
             
             burn= np.where(chain_loglikelihood>=np.max(chain_loglikelihood)/2)[0]
-            #print(burn)
 
             if burn.size == 0:
                 burn = np.array([0])
             
-            chain_samples = np.array(chain_sample)
+            chain_samples = np.array(chain_sample)  #  3-D := (N,no.of sources , no. params per source) 
+
             
-            #chain0 = np.array(chain_sample)[burn[0]:]
-            chain0 = chain_samples.reshape(len(chain_samples),chain_samples.shape[1]*chain_samples.shape[2])[burn[0]:]
+            
+        
+            chain0 = chain_samples.reshape(len(chain_samples),chain_samples.shape[1]*chain_samples.shape[2])[burn[0]:] #Convert to 2-D (N,no of params)
+
+            print(chain0.shape)
 
             splits = np.array_split(chain0,3,axis=1)  #split the whole chain into 3
             chain1= splits[0]                            
@@ -206,10 +227,12 @@ def MH_mcmc(
             step= gelman_rubin.converge_from_list([chain1,chain2,chain3],jump=500)
             
             if step!=1 and step!=-1:
+           
+
                 break                 #chain Converged
                 
             else:
-                mcmc_steps += 20000    #Chain did not converge
+                mcmc_steps += 30000    #Chain did not converge
         
             
 
@@ -221,12 +244,13 @@ def MH_mcmc(
     # Calculate the Acceptance ratio
 
     MCMC_final_steps = mcmc_steps    #naccept / mcmc_steps
+    Acceptance_ratio = naccept/(naccept+nreject)
+    
 
     return (
         np.array(chain_sample),
         chain_loglikelihood,
         chain_prior,
-        MCMC_final_steps
-        #naccept,
-        #nreject
+        MCMC_final_steps,
+        Acceptance_ratio
     ) 
