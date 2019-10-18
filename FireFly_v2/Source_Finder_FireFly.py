@@ -7,7 +7,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 #import Nested_sampling_dev as NS3
 import Metropolis_Hasting_dev as MH3
 
-import FireFly_mcmc_v2 as FireFly
+import FireFly_mcmc_v3 as FireFly
 #import FireFly_mcmc as FireFly
 #import corner
 #from numba import jit
