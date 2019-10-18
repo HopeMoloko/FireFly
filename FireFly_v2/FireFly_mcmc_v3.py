@@ -38,6 +38,8 @@ def MH_acceptance(loglikelihood_new, Prior_new, loglikelihood_old, Prior_old):
     try:
         loglikelihood_new = float(loglikelihood_new)
         loglikelihood_old = float(loglikelihood_old)
+        Prior_new         = float(Prior_new)
+        Prior_old         = float(Prior_old)
     except TypeError:
         raise TypeError('Please check input values, either integers or floats')
 
@@ -45,7 +47,7 @@ def MH_acceptance(loglikelihood_new, Prior_new, loglikelihood_old, Prior_old):
    
     try:
         np.seterr(all='ignore')
-        R = np.exp(logR_likelihood)
+        R = np.exp(logR_likelihood)* (Prior_new / Prior_old)
     except ZeroDivisionError:
         raise ZeroDivisionError('Please check division by zero')
 
