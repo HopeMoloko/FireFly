@@ -181,7 +181,6 @@ def MH_mcmc(loglikelihood_func, Prior_func, theta, mcmc_steps, thresh, stepsize,
         if percent < 10.0: #if battery is less than 10 %
             np.savetxt('restore/' + sample_file_name + '-samples-restore.txt', chain0, delimiter=',')
             np.savetxt('restore/' + sample_file_name + '-loglikelihood-restore.txt', chain_loglikelihood, delimiter=',')
-            np.savetxt('restore/' + sample_file_name + '-stat.txt',naccept)
             stat = pd.DataFrame.from_records([{ 'naccapt': naccept}])
             stat.to_csv('restore/' + sample_file_name + '-stats.txt')
             break
