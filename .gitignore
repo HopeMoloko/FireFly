@@ -1,6 +1,6 @@
  #files_to_ignore
 *.swp
-
+.ipynb_checkpoints
 Nested_Sampling.1.0
 Nested_Sampling.2.0
 Sources
@@ -8,4 +8,5 @@ Source_Finding.ipynb
 Config
 Source_Finding.ipynb
 Scripts
-Error_Handling.ipyn
+Error_Handling.ipynb
+pymultinest
