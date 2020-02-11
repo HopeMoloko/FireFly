@@ -1,7 +1,7 @@
 
-# Masters_Project
+# Fire Fly
 
-This is all the work related to my project.
+FireFly is a bayesian approach to source finding in Astronomical Data.
 =======
 
 
