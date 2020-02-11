@@ -1,14 +1,9 @@
  #files_to_ignore
-.swp*
-.F*
+*.swp
+.F
 Object_detection_Using MCMC.ipynb
-SOSfinder.py
-UpdatedS*
-intervals.ipynb
-make_data*
-My_Notes.log
-Exercise1.ipynb
-Configuration_File.txt
-example*
-.ipynb*
-MCMC/.ipynb*
+Nested_Sampling.1.0
+Nested_Sampling.2.0
+Sources
+Source_Finding.ipynb
+Config
