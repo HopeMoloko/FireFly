@@ -1,9 +1,9 @@
  #files_to_ignore
 *.swp
-.F
-Object_detection_Using MCMC.ipynb
+
 Nested_Sampling.1.0
 Nested_Sampling.2.0
 Sources
 Source_Finding.ipynb
 Config
+Source_Finding.ipynb
