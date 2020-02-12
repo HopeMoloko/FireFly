@@ -2,7 +2,7 @@
 <image src="firefly.gif" width="400" align="left"/> 
 
 # FireFly
-FireFly is a bayesian approach to source finding in Astronomical Data.
+- ![FireFly](https://placehold.it/15/c5f015/000000?text=+) is a bayesian approach to source finding in Astronomical Data.
 
 
 <br>
