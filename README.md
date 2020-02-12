@@ -24,7 +24,7 @@ There are `README.md` files in the folder `FireFly_MCMC` and `FireFly_Nested_Sam
 
 
 ## For Further information.
-Please email me `hopemmoloko@gmail` and i will share by Msc. thesis on FireFly upon request or we can have a chat.
+Please email me @ `hopemmoloko@gmail.com` and i will share by Msc. thesis on FireFly upon request or we can have a chat.
 
 
 
