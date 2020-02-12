@@ -5,7 +5,11 @@
 FireFly is a bayesian approach to source finding in Astronomical Data.
 
 
-
+<br>
+<br>
+<br>
+<br>
+<br>
 
 
 # Installation
@@ -19,7 +23,7 @@ There are `README.md` files in the folder `FireFly_MCMC` and `FireFly_Nested_Sam
 
 ## For Further information.
 
-Please email me `hopemmoloko@gmail` and i will share by Msc. Thesis upon request or we can have a chat.
+Please email me `hopemmoloko@gmail` and i will share by Msc. thesis on FireFly upon request or we can have a chat.
 
 
 
