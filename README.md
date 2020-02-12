@@ -19,11 +19,13 @@ git clone the repo: `git clone [repo]`
 
 ## Running 
 
-There are `README.md` files in the folder `FireFly_MCMC` and `FireFly_Nested_Sampling` which contains instructions of how to run the scrips.
+There are `README.md` files in the folder `FireFly_MCMC` and `FireFly_Nested_Sampling` which contain instructions of how to run the scripts.
+
+
 
 ## For Further information.
-
 Please email me `hopemmoloko@gmail` and i will share by Msc. thesis on FireFly upon request or we can have a chat.
+
 
 
 
