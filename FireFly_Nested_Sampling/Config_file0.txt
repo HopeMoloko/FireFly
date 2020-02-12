@@ -1,0 +1,18 @@
+[execute] # Create csv file of model sources
+simulated_image_name =  Simulated_image0.png
+true_sources_name = Ground_truth0.csv
+samples_name = Posterior_sample0
+pixel_size = 50
+noise_level = 0.7
+num_of_real_sources = 4
+n_walkers = 8
+ndim = 3
+stepper = 1
+threshold = 0.5
+
+[nest]
+nlive_points = 900
+nest_steps   = 2000
+mcmc_steps  = 50
+mcmc_firefly = 40000
+rand_seed = 0
