@@ -11,3 +11,5 @@ Scripts
 Error_Handling.ipynb
 pymultinest
 FireFly_v2
+MCMC
+*.txt
